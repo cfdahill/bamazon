@@ -24,3 +24,45 @@ var connection = mysql.createConnection({
     password: password,
     database: "bamazon_db"
 });
+
+inquirer.prompt([
+    {
+        name: "action",
+        type: "rawlist",
+        message: "Hello, Mr. Manager, what would you like to do today?",
+        choices: ["View products for sale", "View low inventory products", "Add new inventory", "Add new product", "Wow, I'm Mr. Manager!"]
+
+    }
+]).then(function (ans) {
+    if (ans.action == "View products for sale") {
+        //This part is basically a copy and paste from bamazonCustomer
+        connection.connect();
+        connection.query("SELECT * FROM products", function (err, res) {
+            if (err) throw err;
+            for (var i = 0; i < res.length; i++) {
+                console.log("ID: " + res[i].id + " || Product: " + res[i].product_name + " || Price: $" + res[i].price + " || QTY: " + res[i].stock_quantity);
+            }
+        });
+        connection.end();
+        return;
+        //going to close connection at end of each if statement so I can return afterwards
+    }
+    else if(ans.action == "View low inventory products") {
+        connection.connect();
+        connection.query("")
+    }
+    else if (ans.action == "Wow, I'm Mr. Manager!") {
+        //Give me an opportunity to make an Arrested Development reference and I will take it!
+            inquirer.prompt([
+                {
+                    name: "response",
+                    type: "list",
+                    message: 'Well, manager.  We just say "manager"',
+                    choices: ["I know, but you sai-"]
+                }
+            ]).then(function (ans) {
+                console.log("Doesn't matter who.\n\n Did you want to do something, Mr. Manager?");
+            });
+            return;
+        }
+    });
