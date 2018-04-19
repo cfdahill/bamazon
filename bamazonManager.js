@@ -25,6 +25,8 @@ var connection = mysql.createConnection({
     database: "bamazon_db"
 });
 
+var products = [];
+
 inquirer.prompt([
     {
         name: "action",
@@ -34,35 +36,111 @@ inquirer.prompt([
 
     }
 ]).then(function (ans) {
-    if (ans.action == "View products for sale") {
-        //This part is basically a copy and paste from bamazonCustomer
-        connection.connect();
-        connection.query("SELECT * FROM products", function (err, res) {
-            if (err) throw err;
-            for (var i = 0; i < res.length; i++) {
-                console.log("ID: " + res[i].id + " || Product: " + res[i].product_name + " || Price: $" + res[i].price + " || QTY: " + res[i].stock_quantity);
-            }
-        });
-        connection.end();
-        return;
-        //going to close connection at end of each if statement so I can return afterwards
+    switch (ans.action) {
+        case "View products for sale":
+            viewMerch();
+            break;
+
+        case "View low inventory products":
+            lowQuantity();
+            break;
+
+        case "Add new inventory":
+            addInventory();
+            break;
+
+        case "Wow, I'm Mr. Manager!":
+            //Give me an opportunity to make an Arrested Development reference and I will take it!
+            mrMananger();
+            break;
     }
-    else if(ans.action == "View low inventory products") {
-        connection.connect();
-        connection.query("")
-    }
-    else if (ans.action == "Wow, I'm Mr. Manager!") {
-        //Give me an opportunity to make an Arrested Development reference and I will take it!
-            inquirer.prompt([
-                {
-                    name: "response",
-                    type: "list",
-                    message: 'Well, manager.  We just say "manager"',
-                    choices: ["I know, but you sai-"]
-                }
-            ]).then(function (ans) {
-                console.log("Doesn't matter who.\n\n Did you want to do something, Mr. Manager?");
-            });
-            return;
+});
+
+function viewMerch() {
+    //This part is basically a copy and paste from bamazonCustomer
+    connection.connect();
+    connection.query("SELECT * FROM products", function (err, res) {
+        if (err) throw err;
+        for (var i = 0; i < res.length; i++) {
+            console.log("ID: " + res[i].id + " || Product: " + res[i].product_name + " || Price: $" + res[i].price + " || QTY: " + res[i].stock_quantity);
         }
     });
+    connection.end();
+    //going to close connection at end of each if statement so I can return afterwards
+
+}
+
+function lowQuantity() {
+    connection.connect();
+    connection.query("SELECT * FROM products WHERE stock_quantity < 5", function (err, res) {
+        if (err) throw err;
+        for (var i = 0; i < res.length; i++) {
+            console.log("Running low on the following products:\nID:" + res[i].id + " || Product: " + res[i].product_name + " || QTY: " + res[i].stock_quantity);
+        }
+    });
+    connection.end();
+}
+
+function addInventory() {
+    connection.connect();
+    connection.query("SELECT * FROM products", function (err, res) {
+        if (err) throw err;
+        for (var i = 0; i < res.length; i++) {
+            products.push(res[i].product_name);
+            console.log("ID: " + res[i].id + " || Product: " + res[i].product_name + " || QTY: " + res[i].stock_quantity);
+
+        }
+        inquirer.prompt([
+            {
+                name: "product",
+                type: "list",
+                message: "What product is the quantity being updated for?",
+                choices: products
+            }
+            , {
+                name: "add",
+                message: "How many new items would you like to add to the current quantity?",
+                validate: function (ans) {
+                    if (isNaN(ans) === true) {
+                        console.log("\nPlease choose a numerical value.")
+                        return false;
+                        //if user input is not a number than it will not accept the value of the input
+                    }
+                    else {
+                        return true;
+                    }
+                }
+            }
+        ]).then(function (ans) {
+            var arrPosition = products.indexOf(ans.product);
+            var newQty = products[arrPosition].stock_quantity + ans.add
+            connection.query("UPDATE products SET ? WHERE ?",
+                [
+                    {
+                        stock_quantity: newQty
+                    },
+                    {
+                        product_name: ans.product
+                    }
+                ], function (err, res) {
+                    if (err) throw err;
+                    console.log("The inventory has been adjusted:\nID: " + res[arrPosition].id + " || Product: " + res[arrPosition].product_name + " || QTY: " + res[arrPosition].stock_quantity);
+                }
+            );
+        });
+    });
+    connection.end();
+}
+
+function mrManager() {
+    inquirer.prompt([
+        {
+            name: "response",
+            type: "list",
+            message: 'Well, manager.  We just say "manager"',
+            choices: ["I know, but you sai-"]
+        }
+    ]).then(function (ans) {
+        console.log("Doesn't matter who.\n\n Did you want to do something, Mr. Manager?");
+    });
+}
