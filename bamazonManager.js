@@ -48,7 +48,11 @@ inquirer.prompt([
         case "Add new inventory":
             addInventory();
             break;
-
+//---------------------------------------------------Below was added with no functioning internet
+        case "Add new product":
+            addProduct();
+            break;
+//---------------------------------------------------
         case "Wow, I'm Mr. Manager!":
             //Give me an opportunity to make an Arrested Development reference and I will take it!
             mrMananger();
@@ -131,7 +135,60 @@ function addInventory() {
     });
     connection.end();
 }
-
+//--------------------------------------------------------Below this was created without functioning internet connection
+function addProduct() {
+    var dept = [];
+    connection.connect();
+    connection.query("SELECT department_name FROM departments", function(err, res) {
+        if (err) throw err;
+        for( var i = 0; i < res.length; i++) {
+            dept.push(res[i]);
+        }
+    });
+    inquirer.prompt([
+        {
+            name: "name",
+            message: "What is the product name?",
+        },
+        {
+            name: "department",
+            type: "list",
+            message: "What department does this product belong in?",
+            choices: dept
+        },
+        {
+            name: "cost",
+            message: "What is the sale price of the product?  Note: do not include $",
+            validate: function (ans) {
+                if (isNaN(ans) === true) {
+                    console.log("\nPlease choose a numerical value.")
+                    return false;
+                    //if user input is not a number than it will not accept the value of the input
+                }
+                else {
+                    return true;
+                }
+            }
+        },
+        {
+            name: "quantity",
+            message: "What is the current quantity of the product?",
+            validate: function (ans) {
+                if (isNaN(ans) === true) {
+                    console.log("\nPlease choose a numerical value.")
+                    return false;
+                    //if user input is not a number than it will not accept the value of the input
+                }
+                else {
+                    return true;
+                }
+            }
+        }
+    ]).then(function(ans) {
+        
+    })
+}
+//----------------------------------------------------------------------
 function mrManager() {
     inquirer.prompt([
         {
