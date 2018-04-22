@@ -22,10 +22,11 @@ var connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: password,
-    database: "bamazon_db"
+    database: "bamazon_db",
 });
 
 var products = [];
+var dept = [];
 
 inquirer.prompt([
     {
@@ -46,17 +47,17 @@ inquirer.prompt([
             break;
 
         case "Add new inventory":
-            addInventory();
+            pickInventory();
             break;
-//---------------------------------------------------Below was added with no functioning internet
+
         case "Add new product":
             addProduct();
             break;
-//---------------------------------------------------
+
         case "Wow, I'm Mr. Manager!":
             //Give me an opportunity to make an Arrested Development reference and I will take it!
-            mrMananger();
-            break;
+            mrManager();
+
     }
 });
 
@@ -73,6 +74,7 @@ function viewMerch() {
     //going to close connection at end of each if statement so I can return afterwards
 
 }
+//viewMerch works
 
 function lowQuantity() {
     connection.connect();
@@ -84,111 +86,124 @@ function lowQuantity() {
     });
     connection.end();
 }
+//lowQuantity works
 
-function addInventory() {
-    connection.connect();
-    connection.query("SELECT * FROM products", function (err, res) {
+function pickInventory() {
+    connection.connect(function (err) {
         if (err) throw err;
-        for (var i = 0; i < res.length; i++) {
-            products.push(res[i].product_name);
-            console.log("ID: " + res[i].id + " || Product: " + res[i].product_name + " || QTY: " + res[i].stock_quantity);
-
-        }
-        inquirer.prompt([
-            {
-                name: "product",
-                type: "list",
-                message: "What product is the quantity being updated for?",
-                choices: products
+        connection.query("SELECT * FROM products", function (err, res) {
+            if (err) throw err;
+            for (var i = 0; i < res.length; i++) {
+                products.push(res[i].product_name);
+                //This will create a list of all existing products
+                console.log("ID: " + res[i].id + " || Product: " + res[i].product_name + " || QTY: " + res[i].stock_quantity);
+                //This is so the manager can see the quantity of all products
             }
-            , {
-                name: "add",
-                message: "How many new items would you like to add to the current quantity?",
-                validate: function (ans) {
-                    if (isNaN(ans) === true) {
-                        console.log("\nPlease choose a numerical value.")
-                        return false;
-                        //if user input is not a number than it will not accept the value of the input
-                    }
-                    else {
-                        return true;
+            inquirer.prompt([
+                {
+                    name: "product",
+                    type: "list",
+                    message: "What product is the quantity being updated for?",
+                    choices: products
+                }
+                , {
+                    name: "add",
+                    message: "How many new items would you like to add to the current quantity?",
+                    validate: function (ans) {
+                        if (isNaN(ans) === true) {
+                            console.log("\nPlease choose a numerical value.")
+                            return false;
+                            //if user input is not a number than it will not accept the value of the input
+                        }
+                        else {
+                            return true;
+                        }
                     }
                 }
-            }
-        ]).then(function (ans) {
-            var arrPosition = products.indexOf(ans.product);
-            var newQty = products[arrPosition].stock_quantity + ans.add
-            connection.query("UPDATE products SET ? WHERE ?",
-                [
-                    {
-                        stock_quantity: newQty
-                    },
-                    {
-                        product_name: ans.product
-                    }
-                ], function (err, res) {
-                    if (err) throw err;
-                    console.log("The inventory has been adjusted:\nID: " + res[arrPosition].id + " || Product: " + res[arrPosition].product_name + " || QTY: " + res[arrPosition].stock_quantity);
-                }
-            );
+            ]).then(function (ans) {
+                connection.query("UPDATE products SET stock_quantity = stock_quantity + " + ans.add + " WHERE ?",
+                    [
+                        {
+                            product_name: ans.product
+                        }
+                    ], function (err, res) {
+                        if (err) throw err;
+                        console.log("The inventory for " + ans.product + " has " + ans.add + " units added to it.");
+                    });
+                connection.end();
+            });
         });
     });
-    connection.end();
 }
-//--------------------------------------------------------Below this was created without functioning internet connection
+
 function addProduct() {
-    var dept = [];
-    connection.connect();
-    connection.query("SELECT department_name FROM departments", function(err, res) {
+    connection.connect(function (err) {
         if (err) throw err;
-        for( var i = 0; i < res.length; i++) {
-            dept.push(res[i]);
-        }
+        connection.query("SELECT * FROM products", function (err, res) {
+            if (err) throw err;
+            for (var i = 0; i < res.length; i++) {
+                if (dept.indexOf(res[i].department_name) == -1) {
+                dept.push(res[i].department_name);
+                }
+            }
+            //the for loop makes it so that each department will only appear once
+            inquirer.prompt([
+                {
+                    name: "product",
+                    message: "What is the name of the product?",
+                },
+                {
+                    name: "department",
+                    type: "list",
+                    message: "What department does this product belong in?",
+                    choices: dept
+                },
+                {
+                    name: "cost",
+                    message: "What is the sale price of the product?  Note: do not include $",
+                    validate: function (ans) {
+                        if (isNaN(ans) === true) {
+                            console.log("\nPlease choose a numerical value.")
+                            return false;
+                            //if user input is not a number than it will not accept the value of the input
+                        }
+                        else {
+                            return true;
+                        }
+                    }
+                },
+                {
+                    name: "add",
+                    message: "What is the current quantity of the new product?",
+                    validate: function (ans) {
+                        if (isNaN(ans) === true) {
+                            console.log("\nPlease choose a numerical value.")
+                            return false;
+                            //if user input is not a number than it will not accept the value of the input
+                        }
+                        else {
+                            return true;
+                        }
+                    }
+                }
+            ]).then(function (ans) {
+                console.log(ans.add + "units of " + ans.product + " has been added to the department: " + ans.department + " at a price of $" + ans.cost);
+                connection.query("INSERT INTO products SET ?",
+                    {
+                        product_name: ans.product,
+                        department_name: ans.department,
+                        price: ans.cost,
+                        stock_quantity: ans.add
+                    },
+                    function (err, res) {
+                        if (err) throw err;
+                    });
+                connection.end();
+            });
+        });
     });
-    inquirer.prompt([
-        {
-            name: "name",
-            message: "What is the product name?",
-        },
-        {
-            name: "department",
-            type: "list",
-            message: "What department does this product belong in?",
-            choices: dept
-        },
-        {
-            name: "cost",
-            message: "What is the sale price of the product?  Note: do not include $",
-            validate: function (ans) {
-                if (isNaN(ans) === true) {
-                    console.log("\nPlease choose a numerical value.")
-                    return false;
-                    //if user input is not a number than it will not accept the value of the input
-                }
-                else {
-                    return true;
-                }
-            }
-        },
-        {
-            name: "quantity",
-            message: "What is the current quantity of the product?",
-            validate: function (ans) {
-                if (isNaN(ans) === true) {
-                    console.log("\nPlease choose a numerical value.")
-                    return false;
-                    //if user input is not a number than it will not accept the value of the input
-                }
-                else {
-                    return true;
-                }
-            }
-        }
-    ]).then(function(ans) {
-        
-    })
 }
-//----------------------------------------------------------------------
+
 function mrManager() {
     inquirer.prompt([
         {
