@@ -27,6 +27,7 @@ var connection = mysql.createConnection({
 
 var products = [];
 // this will be to push the product names into by mysql and then used by inquirer
+var thisSale;
 
 connection.connect();
 connection.query("SELECT * FROM products", function (err, res) {
@@ -65,6 +66,8 @@ connection.query("SELECT * FROM products", function (err, res) {
         if (qty < res[arrPosition].stock_quantity) {
             var newQty = res[arrPosition].stock_quantity - qty;
             //this will be used to update the quantities in mySQL
+            thisSale = parseFloat((qty * res[arrPosition].price+res[arrPosition].product_sales).toFixed(2));
+            //this line inserted for part 3
             var tax = parseFloat((qty * res[arrPosition].price * 0.073).toFixed(2));
             //We live in Arizona, we have to pay taxes on online sales
             var total = (tax + (answers.quantity * res[arrPosition].price)).toFixed(2);
@@ -72,6 +75,8 @@ connection.query("SELECT * FROM products", function (err, res) {
                 + "\nTax at 7.3%: $" + tax + "\nShipping and Handling: $0.00 (bPrime member)\nTotal: $" + total);
             updateQuantity(newQty, answers.product);
             //updates quanity in mySQL
+            totalSales(thisSale, answers.product);
+            //updates product_sales 
             connection.end();
         }
         else {
@@ -96,5 +101,19 @@ function updateQuantity(newQty, product) {
         }
     );
 };
+
+function totalSales(thisSale, product) {
+    connection.query("UPDATE products SET ? WHERE ?",
+        [
+            {
+                product_sales: thisSale
+            },
+            {
+                product_name: product
+            }
+        ], function (err, res) {
+            if (err) throw err;
+        });
+}
 
 

@@ -14,6 +14,7 @@ This node file will do the following:
         total_profit = product_sales - total_profit
 2. Create new department
 */
+
 require("dotenv").config();
 var mysqlPW = require("./keys.js");
 var password = mysqlPW.mysqlPW.mysql_pw;
@@ -52,12 +53,13 @@ inquirer.prompt([
 
 function viewSales() {
     //This part is basically a copy and paste from bamazonManager which is basically a copy and paste from bamazonCustomer
-    connection.connect();
-    connection.query("SELECT * FROM departments", function (err, res) {
-        if (err) throw err;
-        for (var i = 0; i < res.length; i++) {
-            console.log("Department ID: " + res[i].id + " || Name: " + res[i].department_name + " || Over Head Cost: $" + res[i].over_head_cost + " || Product Sales: $" + res[i].product_sales + " || Profit: $" + res[i].total_profit);
-        }
+    connection.connect(function () {
+        connection.query("SELECT * FROM departments", function (err, res) {
+            if (err) throw err;
+            for (var i = 0; i < res.length; i++) {
+                console.log("Department ID: " + res[i].id + " || Name: " + res[i].department_name + " || Over Head Cost: $" + res[i].over_head_cost + " || Product Sales: $" + res[i].product_sales + " || Profit: $" + res[i].total_profit);
+            }
+        });
     });
     connection.end();
     //going to close connection at end of each if statement so I can return afterwards
@@ -81,7 +83,7 @@ function fire() {
             message: "Do you even have authority to fire people?",
             choices: []
         }
-    ]).then(function(ans) {
+    ]).then(function (ans) {
         console.log("watch Arrested Development to finish this");
-});
+    });
 }
