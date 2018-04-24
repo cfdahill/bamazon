@@ -80,8 +80,9 @@ function lowQuantity() {
     connection.connect();
     connection.query("SELECT * FROM products WHERE stock_quantity < 5", function (err, res) {
         if (err) throw err;
+        console.log("Running low on the following products:")
         for (var i = 0; i < res.length; i++) {
-            console.log("Running low on the following products:\nID:" + res[i].id + " || Product: " + res[i].product_name + " || QTY: " + res[i].stock_quantity);
+            console.log("ID:" + res[i].id + " || Product: " + res[i].product_name + " || QTY: " + res[i].stock_quantity);
         }
     });
     connection.end();
